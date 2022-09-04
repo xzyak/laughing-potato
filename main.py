@@ -12,17 +12,15 @@ app = FastAPI()
 class Toss(BaseModel):
     toss_id: str
     amount: int
-    ref_id: int
-
-
-@app.get(path="/", description="This is the root.")
-async def root():
-    return {"message": "Hello World"}
 
 
 @app.post('/bank/create', name='요청 생성',
           description='요청 시 해당 요청의 UUID를 제공합니다.<br>설정에서 전체-내 토스아이디-돈 받은 내역을 켜두셔야 합니다.')
 async def bank_start(toss: Toss):
+    html_req = requests.get(f'https://toss.me/{toss.toss_id}')
+    ref_id = html_req.text.split('{\\"refId\\":')[1].split(',\\"word\\"')[0]
+    print(ref_id)
+
     current_uuid, name = uuid4(), str(random.randint(500, 1000))
     cash_req = requests.post(
         f"https://api-gateway.toss.im:11099/api-public/v3/cashtag/transfer-feed/received/list?inputWord={toss.toss_id}",
@@ -31,7 +29,7 @@ async def bank_start(toss: Toss):
     cash_data = cash_req.json()
 
     profile_req = requests.get(
-        f"https://api-gateway.toss.im:11099/api-public/v3/cashtag/profile/get-transfer-info?refId={toss.ref_id}&webSessionKey={current_uuid}"
+        f"https://api-gateway.toss.im:11099/api-public/v3/cashtag/profile/get-transfer-info?refId={ref_id}&webSessionKey={current_uuid}"
     )
     profile_data = profile_req.json()
 
